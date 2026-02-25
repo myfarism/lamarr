@@ -40,7 +40,6 @@ export function useAnalyzeJob() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] })
     },
-    onError: () => toast.error("Failed to analyze job"),
   })
 }
 

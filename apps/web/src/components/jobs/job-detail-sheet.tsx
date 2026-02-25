@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sparkles, Mail, Loader2, ExternalLink, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
+import axios from "axios"
 
 interface Props {
   job: Job | null
@@ -35,16 +36,24 @@ export function JobDetailSheet({ job, open, onClose }: Props) {
         toast.success("Analysis complete!")
       },
       onError: (err: unknown) => {
-        const msg = err instanceof Error ? err.message : ""
-        if (msg.includes("CV text")) {
-          toast.error("Upload your CV first", {
-            description: "Go to Settings to add your CV text",
-            action: {
-              label: "Go to Settings",
-              onClick: () => router.push("/settings"),
-            },
-          })
+        if (axios.isAxiosError(err)) {
+          const message = err.response?.data?.error ?? "Failed to analyze job"
+
+          if (message.includes("CV text")) {
+            toast.error("CV belum diisi", {
+              description: "Upload CV kamu di halaman Settings dulu.",
+              action: {
+                label: "Buka Settings",
+                onClick: () => router.push("/settings"),
+              },
+            })
+            return
+          }
+
+          toast.error(message)
+          return
         }
+        toast.error("Failed to analyze job")
       },
     })
   }
