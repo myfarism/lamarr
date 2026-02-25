@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -9,17 +9,32 @@ import {
   updateProfile,
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase"
+import { sendVerificationEmail } from "@/lib/hooks/use-auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card, CardContent, CardDescription,
+  CardHeader, CardTitle,
+} from "@/components/ui/card"
 import { toast } from "sonner"
+import { MailCheck } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [showVerifyScreen, setShowVerifyScreen] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState("")
   const [form, setForm] = useState({ name: "", email: "", password: "" })
+
+  // Kalau balik dari link verifikasi
+  useEffect(() => {
+    if (searchParams.get("verified") === "true") {
+      toast.success("Email verified! Please sign in.")
+    }
+  }, [searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,15 +42,52 @@ export default function LoginPage() {
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, form.email, form.password)
+        const cred = await signInWithEmailAndPassword(auth, form.email, form.password)
+
+        // Cek apakah email sudah diverifikasi
+        if (!cred.user.emailVerified) {
+          await auth.signOut()
+          toast.error("Email belum diverifikasi", {
+            description: "Cek inbox kamu dan klik link verifikasi.",
+            action: {
+              label: "Kirim ulang",
+              onClick: async () => {
+                const tempCred = await signInWithEmailAndPassword(auth, form.email, form.password)
+                await sendVerificationEmail()
+                await auth.signOut()
+                toast.success("Email verifikasi dikirim ulang!")
+              },
+            },
+          })
+          setLoading(false)
+          return
+        }
+
+        router.push("/dashboard")
       } else {
+        // Register
         const cred = await createUserWithEmailAndPassword(auth, form.email, form.password)
         await updateProfile(cred.user, { displayName: form.name })
+        await sendVerificationEmail()
+        setRegisteredEmail(form.email)
+        setShowVerifyScreen(true)
+        await auth.signOut() // sign out dulu, tunggu verifikasi
       }
-      router.push("/dashboard")
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong"
-      toast.error(message)
+      const code = (err as { code?: string }).code ?? ""
+
+      // Friendly error messages
+      const errorMap: Record<string, string> = {
+        "auth/user-not-found":     "Akun tidak ditemukan",
+        "auth/wrong-password":     "Password salah",
+        "auth/email-already-in-use": "Email sudah digunakan",
+        "auth/weak-password":      "Password minimal 6 karakter",
+        "auth/invalid-email":      "Format email tidak valid",
+        "auth/too-many-requests":  "Terlalu banyak percobaan, coba lagi nanti",
+        "auth/invalid-credential": "Email atau password salah",
+      }
+
+      toast.error(errorMap[code] ?? "Terjadi kesalahan, coba lagi")
     } finally {
       setLoading(false)
     }
@@ -47,18 +99,74 @@ export default function LoginPage() {
       await signInWithPopup(auth, googleProvider)
       router.push("/dashboard")
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong"
-      toast.error(message)
+      toast.error("Google sign-in gagal, coba lagi")
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleResendVerification = async () => {
+    setLoading(true)
+    try {
+      const cred = await signInWithEmailAndPassword(auth, registeredEmail, form.password)
+      await sendVerificationEmail()
+      await auth.signOut()
+      toast.success("Email verifikasi dikirim ulang!")
+    } catch {
+      toast.error("Gagal kirim ulang, coba lagi")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Screen setelah register — tunggu verifikasi
+  if (showVerifyScreen) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-8 pb-8 flex flex-col items-center gap-4 text-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <MailCheck className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold">Cek email kamu</h2>
+              <p className="text-sm text-muted-foreground">
+                Link verifikasi dikirim ke
+              </p>
+              <p className="text-sm font-medium">{registeredEmail}</p>
+            </div>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Klik link di email tersebut untuk mengaktifkan akun, lalu kembali ke sini untuk login.
+            </p>
+            <div className="flex flex-col gap-2 w-full mt-2">
+              <Button
+                onClick={() => {
+                  setShowVerifyScreen(false)
+                  setIsLogin(true)
+                }}
+                className="w-full"
+              >
+                Sudah verifikasi, login sekarang
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleResendVerification}
+                disabled={loading}
+              >
+                {loading ? "Mengirim..." : "Kirim ulang email"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
 
-        {/* Logo / Brand */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold tracking-tight">Lamarr</h1>
           <p className="text-muted-foreground text-sm">
@@ -77,7 +185,6 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent className="space-y-4">
 
-            {/* Google */}
             <Button
               variant="outline"
               className="w-full"
@@ -102,14 +209,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email/Password Form */}
             <form onSubmit={handleSubmit} className="space-y-3">
               {!isLogin && (
                 <div className="space-y-1">
-                  <Label htmlFor="name">Name</Label>
+                  <Label htmlFor="name">Nama</Label>
                   <Input
                     id="name"
-                    placeholder="Your Name"
+                    placeholder="Muhammad Faris"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required={!isLogin}
@@ -121,7 +227,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="email@example.com"
+                  placeholder="faris@example.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required
@@ -139,17 +245,19 @@ export default function LoginPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
+                {loading
+                  ? "Loading..."
+                  : isLogin ? "Sign In" : "Buat Akun"}
               </Button>
             </form>
 
             <p className="text-center text-sm text-muted-foreground">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {isLogin ? "Belum punya akun? " : "Sudah punya akun? "}
               <button
                 onClick={() => setIsLogin(!isLogin)}
                 className="text-primary underline-offset-4 hover:underline"
               >
-                {isLogin ? "Sign up" : "Sign in"}
+                {isLogin ? "Daftar" : "Masuk"}
               </button>
             </p>
           </CardContent>
