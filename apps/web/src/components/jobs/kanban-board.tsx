@@ -12,6 +12,8 @@ import { Job, JobStatus, KANBAN_COLUMNS } from "@/lib/types"
 import { Badge } from "@/components/ui/badge"
 import { useState as useColState } from "react"
 import { ChevronDown } from "lucide-react"
+import { EmptyState } from "./empty-state"
+
 
 // Mobile: accordion list per kolom
 function MobileBoard({ jobs }: { jobs: Job[] }) {
@@ -111,6 +113,10 @@ export function KanbanBoard() {
         <p className="text-muted-foreground text-sm animate-pulse">Loading your applications...</p>
       </div>
     )
+  }
+
+  if (jobs.length === 0) {
+    return <EmptyState />
   }
 
   return (

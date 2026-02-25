@@ -182,19 +182,24 @@ func UpdateJob(c *gin.Context) {
 
 // DELETE /api/jobs/:id
 func DeleteJob(c *gin.Context) {
-	user := currentUser(c)
-	id := c.Param("id")
+    user := currentUser(c)
+    id := c.Param("id")
 
-	result := database.DB.
-		Where("id = ? AND user_id = ?", id, user.ID).
-		Delete(&model.Job{})
+    // Cek dulu apakah job exist dan milik user ini
+    var job model.Job
+    result := database.DB.Where("id = ? AND user_id = ?", id, user.ID).First(&job)
+    if result.Error != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
+        return
+    }
 
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Job not found"})
-		return
-	}
+    // Hapus timeline dulu (foreign key constraint)
+    database.DB.Where("job_id = ?", job.ID).Delete(&model.JobTimeline{})
 
-	c.JSON(http.StatusOK, gin.H{"message": "Job deleted"})
+    // Baru hapus job-nya
+    database.DB.Delete(&job)
+
+    c.JSON(http.StatusOK, gin.H{"message": "Job deleted"})
 }
 
 // GET /api/jobs/stats

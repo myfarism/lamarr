@@ -11,9 +11,15 @@ import {
   DropdownMenu, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { MoreHorizontal, Trash2, ExternalLink, Sparkles } from "lucide-react"
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { MoreHorizontal, Trash2, ExternalLink, Sparkles, Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { JobDetailSheet } from "./job-detail-sheet"
+import { EditJobDialog } from "./edit-job-dialog"
 
 interface Props {
   job: Job
@@ -21,7 +27,10 @@ interface Props {
 
 export function JobCard({ job }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
-  const { mutate: deleteJob } = useDeleteJob()
+  const [editOpen, setEditOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const { mutate: deleteJob, isPending: isDeleting } = useDeleteJob()
+
   const {
     attributes, listeners, setNodeRef,
     transform, transition, isDragging,
@@ -38,7 +47,6 @@ export function JobCard({ job }: Props) {
       <div ref={setNodeRef} style={style} {...attributes}>
         <Card className="cursor-grab active:cursor-grabbing hover:border-zinc-600 transition-colors">
           <CardContent className="p-3 space-y-2">
-
             <div className="flex items-start justify-between gap-2">
               <div
                 className="flex-1 min-w-0"
@@ -59,6 +67,10 @@ export function JobCard({ job }: Props) {
                     <Sparkles className="mr-2 h-3 w-3" />
                     View & Analyze
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                    <Pencil className="mr-2 h-3 w-3" />
+                    Edit
+                  </DropdownMenuItem>
                   {job.url && (
                     <DropdownMenuItem asChild>
                       <a href={job.url} target="_blank" rel="noopener noreferrer">
@@ -69,7 +81,7 @@ export function JobCard({ job }: Props) {
                   )}
                   <DropdownMenuItem
                     className="text-destructive focus:text-destructive"
-                    onClick={() => deleteJob(job.id)}
+                    onClick={() => setDeleteOpen(true)}
                   >
                     <Trash2 className="mr-2 h-3 w-3" />
                     Delete
@@ -80,7 +92,7 @@ export function JobCard({ job }: Props) {
 
             <div className="flex items-center gap-2 flex-wrap">
               {job.platform && (
-                <Badge variant="secondary" className="text-xs px-1.5 py-0">
+                <Badge variant="secondary" className="text-xs px-1.5 py-0 capitalize">
                   {job.platform}
                 </Badge>
               )}
@@ -91,11 +103,10 @@ export function JobCard({ job }: Props) {
               )}
               <span className="text-xs text-muted-foreground ml-auto">
                 {new Date(job.applied_at).toLocaleDateString("id-ID", {
-                  day: "numeric", month: "short"
+                  day: "numeric", month: "short",
                 })}
               </span>
             </div>
-
           </CardContent>
         </Card>
       </div>
@@ -105,6 +116,35 @@ export function JobCard({ job }: Props) {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
       />
+
+      <EditJobDialog
+        job={job}
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+      />
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this application?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{job.title}</strong> at <strong>{job.company}</strong> will be permanently removed.
+              This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteJob(job.id)}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

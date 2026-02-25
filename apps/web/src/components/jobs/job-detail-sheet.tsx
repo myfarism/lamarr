@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, Mail, Loader2, ExternalLink, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 interface Props {
   job: Job | null
@@ -23,6 +24,7 @@ export function JobDetailSheet({ job, open, onClose }: Props) {
 
   const { mutate: analyzeJob, isPending: isAnalyzing } = useAnalyzeJob()
   const { mutate: generateEmail, isPending: isGenerating } = useFollowUpEmail()
+  const router = useRouter()
 
   if (!job) return null
 
@@ -31,6 +33,18 @@ export function JobDetailSheet({ job, open, onClose }: Props) {
       onSuccess: (data) => {
         setAnalysis(data)
         toast.success("Analysis complete!")
+      },
+      onError: (err: unknown) => {
+        const msg = err instanceof Error ? err.message : ""
+        if (msg.includes("CV text")) {
+          toast.error("Upload your CV first", {
+            description: "Go to Settings to add your CV text",
+            action: {
+              label: "Go to Settings",
+              onClick: () => router.push("/settings"),
+            },
+          })
+        }
       },
     })
   }
