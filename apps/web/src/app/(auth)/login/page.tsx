@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   signInWithEmailAndPassword,
@@ -20,16 +20,10 @@ import {
 import { toast } from "sonner"
 import { MailCheck } from "lucide-react"
 
-export default function LoginPage() {
-  const router = useRouter()
+// Pisah komponen yang pakai useSearchParams
+function SearchParamsHandler() {
   const searchParams = useSearchParams()
-  const [isLogin, setIsLogin] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [showVerifyScreen, setShowVerifyScreen] = useState(false)
-  const [registeredEmail, setRegisteredEmail] = useState("")
-  const [form, setForm] = useState({ name: "", email: "", password: "" })
 
-  // Kalau balik dari link verifikasi
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
       toast.success("Email berhasil diverifikasi! Silakan login.")
@@ -41,6 +35,17 @@ export default function LoginPage() {
     }
   }, [searchParams])
 
+  return null
+}
+
+function LoginForm() {
+  const router = useRouter()
+  const [isLogin, setIsLogin] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [showVerifyScreen, setShowVerifyScreen] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState("")
+  const [form, setForm] = useState({ name: "", email: "", password: "" })
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -49,7 +54,6 @@ export default function LoginPage() {
       if (isLogin) {
         const cred = await signInWithEmailAndPassword(auth, form.email, form.password)
 
-        // Cek apakah email sudah diverifikasi
         if (!cred.user.emailVerified) {
           await auth.signOut()
           toast.error("Email belum diverifikasi", {
@@ -70,28 +74,24 @@ export default function LoginPage() {
 
         router.push("/dashboard")
       } else {
-        // Register
         const cred = await createUserWithEmailAndPassword(auth, form.email, form.password)
         await updateProfile(cred.user, { displayName: form.name })
         await sendVerificationEmail()
+        await auth.signOut()
         setRegisteredEmail(form.email)
         setShowVerifyScreen(true)
-        await auth.signOut() // sign out dulu, tunggu verifikasi
       }
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? ""
-
-      // Friendly error messages
       const errorMap: Record<string, string> = {
-        "auth/user-not-found":     "Akun tidak ditemukan",
-        "auth/wrong-password":     "Password salah",
+        "auth/user-not-found":       "Akun tidak ditemukan",
+        "auth/wrong-password":       "Password salah",
         "auth/email-already-in-use": "Email sudah digunakan",
-        "auth/weak-password":      "Password minimal 6 karakter",
-        "auth/invalid-email":      "Format email tidak valid",
-        "auth/too-many-requests":  "Terlalu banyak percobaan, coba lagi nanti",
-        "auth/invalid-credential": "Email atau password salah",
+        "auth/weak-password":        "Password minimal 6 karakter",
+        "auth/invalid-email":        "Format email tidak valid",
+        "auth/too-many-requests":    "Terlalu banyak percobaan, coba lagi nanti",
+        "auth/invalid-credential":   "Email atau password salah",
       }
-
       toast.error(errorMap[code] ?? "Terjadi kesalahan, coba lagi")
     } finally {
       setLoading(false)
@@ -103,7 +103,7 @@ export default function LoginPage() {
     try {
       await signInWithPopup(auth, googleProvider)
       router.push("/dashboard")
-    } catch (err: unknown) {
+    } catch {
       toast.error("Google sign-in gagal, coba lagi")
     } finally {
       setLoading(false)
@@ -113,7 +113,7 @@ export default function LoginPage() {
   const handleResendVerification = async () => {
     setLoading(true)
     try {
-      const cred = await signInWithEmailAndPassword(auth, registeredEmail, form.password)
+      await signInWithEmailAndPassword(auth, registeredEmail, form.password)
       await sendVerificationEmail()
       await auth.signOut()
       toast.success("Email verifikasi dikirim ulang!")
@@ -124,7 +124,6 @@ export default function LoginPage() {
     }
   }
 
-  // Screen setelah register — tunggu verifikasi
   if (showVerifyScreen) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -171,7 +170,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
-
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold tracking-tight">Lamarr</h1>
           <p className="text-muted-foreground text-sm">
@@ -189,7 +187,6 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-
             <Button
               variant="outline"
               className="w-full"
@@ -250,9 +247,7 @@ export default function LoginPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading
-                  ? "Loading..."
-                  : isLogin ? "Sign In" : "Buat Akun"}
+                {loading ? "Loading..." : isLogin ? "Sign In" : "Buat Akun"}
               </Button>
             </form>
 
@@ -269,5 +264,17 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// Default export — wrap dengan Suspense
+export default function LoginPage() {
+  return (
+    <>
+      <Suspense fallback={null}>
+        <SearchParamsHandler />
+      </Suspense>
+      <LoginForm />
+    </>
   )
 }
