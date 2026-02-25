@@ -109,7 +109,7 @@ export default function LoginPage() {
                   <Label htmlFor="name">Name</Label>
                   <Input
                     id="name"
-                    placeholder="Muhammad Faris"
+                    placeholder="Your Name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required={!isLogin}
@@ -121,7 +121,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="faris@example.com"
+                  placeholder="email@example.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required

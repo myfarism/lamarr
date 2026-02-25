@@ -59,11 +59,10 @@ export default function SettingsPage() {
                 placeholder={`Paste your full CV here...
 
 Example:
-Muhammad Faris Hafizh
+Your Name
 Backend Developer | Node.js | Go | PostgreSQL
 
 Experience:
-- PT Asa Kreasi Interasia (2025 - Present)
   Built RESTful APIs with Node.js...
 
 Skills:
