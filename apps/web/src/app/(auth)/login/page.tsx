@@ -32,7 +32,12 @@ export default function LoginPage() {
   // Kalau balik dari link verifikasi
   useEffect(() => {
     if (searchParams.get("verified") === "true") {
-      toast.success("Email verified! Please sign in.")
+      toast.success("Email berhasil diverifikasi! Silakan login.")
+    }
+    if (searchParams.get("unverified") === "true") {
+      toast.error("Email belum diverifikasi", {
+        description: "Cek inbox kamu dan klik link verifikasi.",
+      })
     }
   }, [searchParams])
 

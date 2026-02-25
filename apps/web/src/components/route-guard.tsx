@@ -3,14 +3,25 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/store/auth.store"
+import { auth } from "@/lib/firebase"
 
 export function RouteGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return
+
+    if (!user) {
       router.push("/login")
+      return
+    }
+
+    // Block akun email yang belum verifikasi
+    // Google login selalu emailVerified = true, jadi aman
+    if (!user.emailVerified) {
+      auth.signOut()
+      router.push("/login?unverified=true")
     }
   }, [user, loading, router])
 
@@ -24,7 +35,7 @@ export function RouteGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!user) return null
+  if (!user || !user.emailVerified) return null
 
   return <>{children}</>
 }
