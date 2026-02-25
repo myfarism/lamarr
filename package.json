@@ -1,6 +1,7 @@
 {
   "name": "lamarr",
   "private": true,
+  "packageManager": "pnpm@10.30.2",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build"
@@ -10,6 +11,6 @@
     "packages/*"
   ],
   "devDependencies": {
-    "turbo": "^2.8.10"
+    "turbo": "latest"
   }
 }
