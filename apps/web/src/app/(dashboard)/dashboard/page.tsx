@@ -9,12 +9,15 @@ import { Button } from "@/components/ui/button"
 import { LogOut, Settings, BarChart2, Layout } from "lucide-react"
 import Link from "next/link"
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
+import { useLogout } from "@/lib/hooks/use-auth"
 
 type View = "board" | "analytics"
 
 export default function DashboardPage() {
   const { user } = useAuthStore()
   const [view, setView] = useState<View>("board")
+  const { logout } = useLogout()
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -68,7 +71,7 @@ export default function DashboardPage() {
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => auth.signOut()}
+            onClick={logout}
           >
             <LogOut className="h-4 w-4" />
           </Button>
