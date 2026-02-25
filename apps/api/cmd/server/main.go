@@ -68,6 +68,7 @@ func main() {
 		aiRoutes := api.Group("/ai")
 		{
 			aiRoutes.POST("/parse-job", handler.ParseJob)
+			aiRoutes.POST("/scrape", handler.ScrapeJob)
 			aiRoutes.POST("/analyze/:jobId", handler.AnalyzeJob)
 			aiRoutes.POST("/follow-up/:jobId", handler.GenerateFollowUp)
 		}

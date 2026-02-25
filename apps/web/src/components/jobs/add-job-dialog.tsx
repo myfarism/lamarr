@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Sparkles, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { useScrapeJob } from "@/lib/hooks/use-scrape"
 
 export function AddJobDialog() {
   const [open, setOpen] = useState(false)
@@ -28,6 +29,7 @@ export function AddJobDialog() {
 
   const { mutate: parseJob, isPending: isParsing } = useParseJob()
   const { mutate: createJob, isPending: isCreating } = useCreateJob()
+  const { mutate: scrapeJob, isPending: isScraping } = useScrapeJob()
 
   const handleParse = () => {
     if (!rawText.trim()) {
@@ -156,12 +158,41 @@ export function AddJobDialog() {
                 />
               </div>
               <div className="space-y-1">
-                <Label>Job URL</Label>
-                <Input
-                  placeholder="https://..."
-                  value={form.url}
-                  onChange={(e) => setForm({ ...form, url: e.target.value })}
-                />
+                <Label>Job URL (AI akan scrape otomatis)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://linkedin.com/jobs/..."
+                    value={form.url}
+                    onChange={(e) => setForm({ ...form, url: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (form.url) {
+                        scrapeJob(form.url, {
+                          onSuccess: (parsed) => {
+                            setForm({
+                              ...form,
+                              title: parsed.title || form.title,
+                              company: parsed.company || form.company,
+                              platform: parsed.platform || form.platform,
+                              description: parsed.description || form.description,
+                              requirements: parsed.requirements || form.requirements,
+                              salary_min: parsed.salary_min ?? form.salary_min,
+                              salary_max: parsed.salary_max ?? form.salary_max,
+                            })
+                            toast.success("Job berhasil di-scrape!")
+                          },
+                        })
+                      }
+                    }}
+                    disabled={isScraping || !form.url}
+                  >
+                    {isScraping ? "🔍" : "Scrape"}
+                  </Button>
+                </div>
               </div>
             </div>
 

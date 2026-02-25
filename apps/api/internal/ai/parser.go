@@ -18,43 +18,56 @@ type ParsedJob struct {
 }
 
 func ParseJobDescription(ctx context.Context, rawText string) (*ParsedJob, error) {
-	systemPrompt := `You are a job description parser. Extract structured information from job postings.
+    systemPrompt := `You are a job description parser. Extract structured information from job postings.
+The input may be raw HTML text, JSON from Next.js __NEXT_DATA__, or plain text. Find the relevant job information.
 Always respond with valid JSON only, no markdown, no explanation.
 If a field cannot be determined, use null for numbers and empty string for strings.`
 
-	userMessage := fmt.Sprintf(`Parse this job posting and return JSON with these exact fields:
+    userMessage := fmt.Sprintf(`Parse this content and return JSON with these exact fields:
 {
   "title": "job title",
-  "company": "company name", 
+  "company": "company name",
   "description": "job description summary (max 500 chars)",
   "requirements": "key requirements as comma-separated list",
   "salary_min": null or number in IDR,
   "salary_max": null or number in IDR,
-  "platform": "detected platform (linkedin/glints/jobstreet/etc)"
+  "platform": "detected platform (linkedin/glints/jobstreet/kalibrr/other)"
 }
 
-Job posting:
+Content:
 %s`, rawText)
 
 	response, err := Chat(ctx, systemPrompt, userMessage)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("groq chat failed: %w", err)
 	}
 
-	// Bersihkan response kalau ada markdown code block
+	// DEBUG — log response untuk debug
+	fmt.Printf("Groq raw response: %q\n", response[:min(500, len(response))])
+	fmt.Printf("Response length: %d\n", len(response))
+
+	// Bersihkan response
 	response = strings.TrimSpace(response)
 	response = strings.TrimPrefix(response, "```json")
 	response = strings.TrimPrefix(response, "```")
 	response = strings.TrimSuffix(response, "```")
 	response = strings.TrimSpace(response)
 
+	fmt.Printf("Cleaned response: %q\n", response[:min(500, len(response))])
+
 	var parsed ParsedJob
 	if err := json.Unmarshal([]byte(response), &parsed); err != nil {
-		return nil, fmt.Errorf("failed to parse AI response: %w", err)
+		return nil, fmt.Errorf("json unmarshal failed: %w (response: %s)", err, response)
 	}
 
 	return &parsed, nil
 }
+
+func min(a, b int) int {
+	if a < b { return a }
+	return b
+}
+
 
 type GapAnalysis struct {
 	MatchPercentage int      `json:"match_percentage"`
