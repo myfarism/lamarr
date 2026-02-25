@@ -10,6 +10,8 @@ import { LogOut, Settings, BarChart2, Layout } from "lucide-react"
 import Link from "next/link"
 import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
 import { useLogout } from "@/lib/hooks/use-auth"
+import { ThemeToggle } from "@/components/theme-toggle"
+
 
 type View = "board" | "analytics"
 
@@ -62,6 +64,7 @@ export default function DashboardPage() {
             {user?.displayName || user?.email}
           </span>
           <AddJobDialog />
+          <ThemeToggle />
           <Link href="/settings">
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <Settings className="h-4 w-4" />

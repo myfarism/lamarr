@@ -18,15 +18,45 @@ func currentUser(c *gin.Context) model.User {
 
 // GET /api/jobs
 func GetJobs(c *gin.Context) {
-	user := currentUser(c)
+    user := currentUser(c)
 
-	var jobs []model.Job
-	database.DB.Where("user_id = ?", user.ID).
-		Order("created_at desc").
-		Find(&jobs)
+    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
+    search := c.Query("search")
 
-	c.JSON(http.StatusOK, gin.H{"data": jobs})
+    if page < 1 { page = 1 }
+    if limit > 100 { limit = 100 }
+    offset := (page - 1) * limit
+
+    query := database.DB.Where("user_id = ?", user.ID)
+
+    if search != "" {
+        query = query.Where(
+            "title ILIKE ? OR company ILIKE ?",
+            "%"+search+"%", "%"+search+"%",
+        )
+    }
+
+    var total int64
+    query.Model(&model.Job{}).Count(&total)
+
+    var jobs []model.Job
+    query.Order("created_at desc").
+        Limit(limit).
+        Offset(offset).
+        Find(&jobs)
+
+    c.JSON(http.StatusOK, gin.H{
+        "data": jobs,
+        "meta": gin.H{
+            "total": total,
+            "page":  page,
+            "limit": limit,
+            "pages": (total + int64(limit) - 1) / int64(limit),
+        },
+    })
 }
+
 
 // GET /api/jobs/:id
 func GetJob(c *gin.Context) {

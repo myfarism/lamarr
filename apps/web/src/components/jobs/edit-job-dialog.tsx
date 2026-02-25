@@ -12,6 +12,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { PLATFORMS } from "@/lib/types"
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
+} from "@/components/ui/select"
 
 interface Props {
   job: Job
@@ -97,12 +102,20 @@ export function EditJobDialog({ job, open, onClose }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label>Platform</Label>
-              <Input
-                value={form.platform}
-                onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                placeholder="linkedin, glints..."
-              />
+                <Label>Platform</Label>
+                <Select
+                    value={form.platform}
+                    onValueChange={(v) => setForm({ ...form, platform: v })}
+                >
+                    <SelectTrigger>
+                    <SelectValue placeholder="Pilih platform..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {PLATFORMS.map((p) => (
+                        <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
             </div>
             <div className="space-y-1">
               <Label>Job URL</Label>

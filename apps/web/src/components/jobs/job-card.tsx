@@ -25,6 +25,18 @@ interface Props {
   job: Job
 }
 
+function getDeadlineStatus(deadline?: string) {
+  if (!deadline) return null
+  const days = Math.ceil(
+    (new Date(deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  )
+  if (days < 0)  return { label: "Expired", class: "text-red-500 border-red-500/30" }
+  if (days === 0) return { label: "Hari ini!", class: "text-red-400 border-red-400/30" }
+  if (days <= 3)  return { label: `${days}h lagi`, class: "text-orange-400 border-orange-400/30" }
+  if (days <= 7)  return { label: `${days}h lagi`, class: "text-yellow-400 border-yellow-400/30" }
+  return { label: `${days}h lagi`, class: "text-muted-foreground border-border" }
+}
+
 export function JobCard({ job }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -107,6 +119,14 @@ export function JobCard({ job }: Props) {
                 })}
               </span>
             </div>
+            {(() => {
+              const dl = getDeadlineStatus(job.deadline)
+              return dl ? (
+                <Badge variant="outline" className={`text-xs px-1.5 py-0 ${dl.class}`}>
+                  ⏰ {dl.label}
+                </Badge>
+              ) : null
+            })()}
           </CardContent>
         </Card>
       </div>

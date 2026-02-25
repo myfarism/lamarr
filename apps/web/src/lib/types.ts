@@ -46,3 +46,16 @@ export const KANBAN_COLUMNS: {
   { id: "rejected",  label: "Rejected",   emoji: "❌" },
   { id: "ghosted",   label: "Ghosted",    emoji: "👻" },
 ]
+
+export const PLATFORMS = [
+  "linkedin",
+  "glints",
+  "jobstreet",
+  "kalibrr",
+  "indeed",
+  "jobs.id",
+  "karir.com",
+  "direct",
+  "referral",
+  "other",
+] as const
