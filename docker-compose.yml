@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: lamarr-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lamarr
+    ports:
+      - "5432:5432"
+    volumes:
+      - lamarr-postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: lamarr-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - lamarr-redis-data:/data
+
+volumes:
+  lamarr-postgres-data:
+  lamarr-redis-data:
