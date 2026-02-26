@@ -13,7 +13,6 @@ import { Sparkles, Mail, Loader2, ExternalLink, TrendingUp, AlertTriangle, Check
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import axios from "axios"
-import { Calendar, Clock } from "lucide-react"
 
 interface Props {
   job: Job | null
