@@ -20,11 +20,13 @@ func currentUser(c *gin.Context) model.User {
 func GetJobs(c *gin.Context) {
     user := currentUser(c)
 
-    page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
-    search := c.Query("search")
+    page, _  := strconv.Atoi(c.DefaultQuery("page", "1"))
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10")) // ← ubah default ke 10
+    search   := c.Query("search")
+    status   := c.Query("status")   // ← tambah
+    platform := c.Query("platform") // ← tambah
 
-    if page < 1 { page = 1 }
+    if page < 1  { page = 1 }
     if limit > 100 { limit = 100 }
     offset := (page - 1) * limit
 
@@ -35,6 +37,16 @@ func GetJobs(c *gin.Context) {
             "title ILIKE ? OR company ILIKE ?",
             "%"+search+"%", "%"+search+"%",
         )
+    }
+
+    // ← tambah filter status
+    if status != "" {
+        query = query.Where("status = ?", status)
+    }
+
+    // ← tambah filter platform
+    if platform != "" && platform != "all" {
+        query = query.Where("platform = ?", platform)
     }
 
     var total int64
@@ -56,6 +68,7 @@ func GetJobs(c *gin.Context) {
         },
     })
 }
+
 
 
 // GET /api/jobs/:id
