@@ -217,7 +217,7 @@ function LoginForm() {
                   <Label htmlFor="name">Nama</Label>
                   <Input
                     id="name"
-                    placeholder="Muhammad Faris"
+                    placeholder="Your Name"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     required={!isLogin}
@@ -229,7 +229,7 @@ function LoginForm() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="faris@example.com"
+                  placeholder="email@example.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required

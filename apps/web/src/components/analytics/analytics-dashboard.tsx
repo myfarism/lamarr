@@ -8,6 +8,8 @@ import {
   PieChart, Pie, Cell, Legend,
 } from "recharts"
 import { TrendingUp, Send, Clock, Trophy } from "lucide-react"
+import { SmartSuggestions } from "@/components/analytics/smart-suggestions"
+
 
 const STATUS_COLORS: Record<string, string> = {
   applied:   "#6366f1",
@@ -158,6 +160,8 @@ export function AnalyticsDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <SmartSuggestions />
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

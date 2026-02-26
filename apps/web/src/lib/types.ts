@@ -24,6 +24,7 @@ export interface Job {
   deadline?: string
   created_at: string
   updated_at: string
+  timelines?: JobTimeline[]
 }
 
 export interface JobTimeline {

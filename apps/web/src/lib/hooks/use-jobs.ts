@@ -13,6 +13,17 @@ export function useJobs() {
   })
 }
 
+export function useJob(id: number | null) {
+  return useQuery<Job>({
+    queryKey: ["jobs", id],
+    queryFn: async () => {
+      const res = await api.get(`/api/jobs/${id}`)
+      return res.data.data
+    },
+    enabled: id !== null,
+  })
+}
+
 export function useCreateJob() {
   const queryClient = useQueryClient()
 

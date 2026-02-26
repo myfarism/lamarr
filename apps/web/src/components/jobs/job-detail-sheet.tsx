@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Job } from "@/lib/types"
 import { useAnalyzeJob, useFollowUpEmail, GapAnalysis } from "@/lib/hooks/use-ai"
+import { useJob } from "@/lib/hooks/use-jobs"
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle,
 } from "@/components/ui/sheet"
@@ -12,6 +13,7 @@ import { Sparkles, Mail, Loader2, ExternalLink, TrendingUp, AlertTriangle, Check
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import axios from "axios"
+import { Calendar, Clock } from "lucide-react"
 
 interface Props {
   job: Job | null
@@ -19,13 +21,16 @@ interface Props {
   onClose: () => void
 }
 
-export function JobDetailSheet({ job, open, onClose }: Props) {
+export function JobDetailSheet({ job: jobProp, open, onClose }: Props) {
   const [analysis, setAnalysis] = useState<GapAnalysis | null>(null)
   const [followUpEmail, setFollowUpEmail] = useState<string | null>(null)
 
   const { mutate: analyzeJob, isPending: isAnalyzing } = useAnalyzeJob()
   const { mutate: generateEmail, isPending: isGenerating } = useFollowUpEmail()
   const router = useRouter()
+  const { data: jobDetail } = useJob(open && jobProp ? jobProp.id : null)
+
+  const job = jobDetail ?? jobProp
 
   if (!job) return null
 
@@ -187,6 +192,34 @@ export function JobDetailSheet({ job, open, onClose }: Props) {
               </div>
             </div>
           )}
+
+          {job.timelines && job.timelines.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium flex items-center gap-2">
+              📋 Riwayat Perubahan
+            </h3>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {job.timelines.slice().reverse().map((timeline) => (
+                <div key={timeline.id} className="flex items-start gap-3 p-2 bg-secondary/30 rounded-md">
+                  <div className="flex-shrink-0 w-1.5 h-1.5 bg-primary rounded-full mt-1.5" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <span className="text-xs font-medium capitalize">{timeline.stage}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(timeline.happened_at).toLocaleDateString("id-ID", {
+                          day: "numeric", month: "short", year: "numeric"
+                        })}
+                      </span>
+                    </div>
+                    {timeline.note && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{timeline.note}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
           {/* Follow-up Email */}
           {followUpEmail && (
