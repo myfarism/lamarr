@@ -7,6 +7,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithPopup,
   updateProfile,
+  onAuthStateChanged,
 } from "firebase/auth"
 import { auth, googleProvider } from "@/lib/firebase"
 import { sendVerificationEmail } from "@/lib/hooks/use-auth"
@@ -42,9 +43,22 @@ function LoginForm() {
   const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const [showVerifyScreen, setShowVerifyScreen] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState("")
   const [form, setForm] = useState({ name: "", email: "", password: "" })
+
+  // Cek apakah user sudah login, redirect ke dashboard jika iya
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && user.emailVerified) {
+        router.replace("/dashboard")
+      } else {
+        setCheckingAuth(false)
+      }
+    })
+    return () => unsubscribe()
+  }, [router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -122,6 +136,16 @@ function LoginForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-muted-foreground text-sm animate-pulse">
+          Loading Lamarr...
+        </div>
+      </div>
+    )
   }
 
   if (showVerifyScreen) {

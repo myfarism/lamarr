@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app"
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth"
+import { getAuth, GoogleAuthProvider } from "firebase/auth"
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,12 +12,4 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
 export const auth = getAuth(app)
-
-// Set persistence ke LOCAL agar session tersimpan di localStorage
-if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalPersistence).catch((error) => {
-    console.error("Error setting auth persistence:", error)
-  })
-}
-
 export const googleProvider = new GoogleAuthProvider()
