@@ -1,0 +1,30 @@
+name: Deploy Lamarr
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/lamarr
+            git pull origin main
+
+            # Backend Go
+            cd apps/api
+            go build -o main ./cmd/server/main.go
+            pm2 reload lamarr-api --update-env
+
+            # Frontend Next.js
+            cd /var/www/lamarr/apps/web
+            npm install
+            npm run build
+            pm2 reload lamarr-web --update-env
